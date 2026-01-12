@@ -1,17 +1,20 @@
 {
-  "name": "app",
+  "name": "save-our-votes",
   "version": "1.0.0",
   "description": "save our votes",
   "license": "ISC",
   "author": "delightsome",
+  "private": true,
   "type": "module",
-  "main": "dist/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc && node copy-views.js",
     "dev": "cross-env NODE_ENV=development nodemon --exec \"tsx\" ./src/server.ts",
+    "dev:web": "pnpm --filter web dev",
+    "dev:all": "pnpm --parallel dev dev:web",
+    "build": "tsc && node copy-views.js",
+    "build:web": "pnpm --filter web build",
+    "build:all": "pnpm build && pnpm build:web",
     "start": "node ./dist/server.js",
-    "start:prod": "cross-env NODE_ENV=production node ./dist/server.js"
+    "start:web": "pnpm --filter web start"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",
@@ -46,5 +49,10 @@
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5.3.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "typescript": "^5.3.3"
+    }
   }
 }
