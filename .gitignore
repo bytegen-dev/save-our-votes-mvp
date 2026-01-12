@@ -69,3 +69,7 @@ signin-preview.html
 
 # Mongo dumps
 dump/
+
+# Project specific
+root-sec/
+root-sec.txt
