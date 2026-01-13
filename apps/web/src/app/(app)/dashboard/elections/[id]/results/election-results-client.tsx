@@ -21,6 +21,7 @@ import { Download, BarChart3, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import type { Election } from '@/lib/types/election';
 import { showToast } from '@/lib/toast';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface ResultsData {
   electionId: string;
@@ -33,6 +34,8 @@ interface ResultsData {
       optionId: string;
       text: string;
       order: number;
+      photo?: string;
+      bio?: string;
       votes: number;
     }>;
     totalVotes: number;
@@ -197,7 +200,30 @@ export function ElectionResultsClient({
                       return (
                         <div key={option.optionId} className="space-y-2">
                           <div className="flex items-center justify-between text-sm">
-                            <span>{option.text}</span>
+                            <div className="flex items-center gap-3">
+                              {option.photo ? (
+                                <Avatar className="h-10 w-10">
+                                  <AvatarImage src={option.photo} alt={option.text} />
+                                  <AvatarFallback>
+                                    {option.text?.[0]?.toUpperCase() || 'C'}
+                                  </AvatarFallback>
+                                </Avatar>
+                              ) : (
+                                <Avatar className="h-10 w-10">
+                                  <AvatarFallback>
+                                    {option.text?.[0]?.toUpperCase() || 'C'}
+                                  </AvatarFallback>
+                                </Avatar>
+                              )}
+                              <div>
+                                <span className="block">{option.text}</span>
+                                {option.bio && (
+                                  <span className="text-xs text-muted-foreground line-clamp-1">
+                                    {option.bio}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                             <div className="flex items-center gap-4">
                               <span className="text-muted-foreground">
                                 {option.votes} votes

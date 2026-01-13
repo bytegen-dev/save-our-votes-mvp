@@ -74,6 +74,8 @@ const resultsForElectionFactory = () =>
             optionId: String(opt._id),
             text: opt.text,
             order: opt.order,
+            photo: opt.photo,
+            bio: opt.bio,
             votes: tallies[String(opt._id)] || 0,
           })),
           totalVotes: Object.values(tallies).reduce((sum, count) => sum + count, 0),
