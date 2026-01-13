@@ -26,11 +26,40 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Download, Users, Mail } from 'lucide-react';
+import {
+  Upload,
+  Download,
+  Users,
+  Mail,
+  Edit,
+  Trash2,
+  MoreVertical,
+} from 'lucide-react';
 import type { Election } from '@/lib/types/election';
 import type { Voter } from '@/lib/types/voter';
 import { ImportVotersDialog } from '@/components/voters/import-voters-dialog';
+import { AddVoterDialog } from '@/components/voters/add-voter-dialog';
+import { EditVoterDialog } from '@/components/voters/edit-voter-dialog';
+import { DeleteVoterDialog } from '@/components/voters/delete-voter-dialog';
 import { showToast } from '@/lib/toast';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { api } from '@/lib/api/client';
 
 interface VotersPageClientProps {
   elections: Election[];
@@ -44,7 +73,14 @@ export function VotersPageClient({ elections, voters }: VotersPageClientProps) {
   const [selectedElectionId, setSelectedElectionId] =
     useState<string>(electionIdFromUrl);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedVoters, setSelectedVoters] = useState<Set<string>>(new Set());
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [selectedVoter, setSelectedVoter] = useState<Voter | null>(null);
+  const [isDeletingBulk, setIsDeletingBulk] = useState(false);
 
   useEffect(() => {
     setSelectedElectionId(electionIdFromUrl);
@@ -57,7 +93,76 @@ export function VotersPageClient({ elections, voters }: VotersPageClientProps) {
 
   const handleImportSuccess = () => {
     router.refresh();
+    setSelectedVoters(new Set());
   };
+
+  const handleEditVoter = (voter: Voter) => {
+    setSelectedVoter(voter);
+    setEditDialogOpen(true);
+  };
+
+  const handleDeleteVoter = (voter: Voter) => {
+    setSelectedVoter(voter);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleEditSuccess = () => {
+    router.refresh();
+    setSelectedVoter(null);
+  };
+
+  const handleDeleteSuccess = () => {
+    router.refresh();
+    setSelectedVoter(null);
+    setSelectedVoters(new Set());
+  };
+
+  const handleSelectVoter = (voterId: string, checked: boolean) => {
+    const newSelected = new Set(selectedVoters);
+    if (checked) {
+      newSelected.add(voterId);
+    } else {
+      newSelected.delete(voterId);
+    }
+    setSelectedVoters(newSelected);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (!voters) return;
+    if (checked) {
+      const pendingVoters = voters.filter((v) => !v.used);
+      setSelectedVoters(new Set(pendingVoters.map((v) => v._id)));
+    } else {
+      setSelectedVoters(new Set());
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedVoters.size === 0) return;
+
+    try {
+      setIsDeletingBulk(true);
+      const voterIds = Array.from(selectedVoters);
+      await api.voters.deleteBulk(voterIds);
+      showToast.success(`${voterIds.length} voter(s) deleted successfully`);
+      setBulkDeleteDialogOpen(false);
+      setSelectedVoters(new Set());
+      router.refresh();
+    } catch (error: any) {
+      console.error('Failed to delete voters:', error);
+      showToast.error(
+        error?.data?.message || error?.message || 'Failed to delete voters'
+      );
+    } finally {
+      setIsDeletingBulk(false);
+    }
+  };
+
+  const selectedCount = selectedVoters.size;
+  const canSelectAll = voters && voters.length > 0;
+  const allPendingSelected =
+    canSelectAll &&
+    voters.filter((v) => !v.used).every((v) => selectedVoters.has(v._id));
 
   const handleExportCSV = async () => {
     if (!selectedElectionId || !voters || voters.length === 0) {
@@ -68,16 +173,12 @@ export function VotersPageClient({ elections, voters }: VotersPageClientProps) {
     setIsExporting(true);
     try {
       const csvRows: string[] = [];
-      csvRows.push('Email,Voter ID,Voter Key,Status,Used At');
+      csvRows.push('email'); // Header row - lowercase to match import format
 
       for (const voter of voters) {
-        const status = voter.used ? 'Used' : 'Pending';
-        const usedAt = voter.usedAt ? new Date(voter.usedAt).toISOString() : '';
-        csvRows.push(
-          `"${voter.email || ''}","${
-            voter._id
-          }","[Token not available]","${status}","${usedAt}"`
-        );
+        if (voter.email) {
+          csvRows.push(`"${voter.email}"`);
+        }
       }
 
       const csvContent = csvRows.join('\n');
@@ -198,6 +299,19 @@ export function VotersPageClient({ elections, voters }: VotersPageClientProps) {
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
+                    {selectedCount > 0 && (
+                      <Button
+                        variant="destructive"
+                        onClick={() => setBulkDeleteDialogOpen(true)}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete Selected ({selectedCount})
+                      </Button>
+                    )}
+                    <Button onClick={() => setAddDialogOpen(true)}>
+                      <Users className="mr-2 h-4 w-4" />
+                      Add Voter
+                    </Button>
                     <Button
                       variant="outline"
                       onClick={() => setImportDialogOpen(true)}
@@ -221,15 +335,32 @@ export function VotersPageClient({ elections, voters }: VotersPageClientProps) {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-[50px]">
+                          <Checkbox
+                            checked={allPendingSelected || false}
+                            onCheckedChange={handleSelectAll}
+                            disabled={!canSelectAll}
+                          />
+                        </TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Voted At</TableHead>
                         <TableHead>Created At</TableHead>
+                        <TableHead className="w-[50px]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {voters.map((voter) => (
                         <TableRow key={voter._id}>
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedVoters.has(voter._id)}
+                              onCheckedChange={(checked) =>
+                                handleSelectVoter(voter._id, !!checked)
+                              }
+                              disabled={voter.used}
+                            />
+                          </TableCell>
                           <TableCell className="font-medium">
                             {voter.email || 'No email'}
                           </TableCell>
@@ -248,6 +379,35 @@ export function VotersPageClient({ elections, voters }: VotersPageClientProps) {
                           <TableCell>
                             {new Date(voter.createdAt).toLocaleString()}
                           </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => handleEditVoter(voter)}
+                                >
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => handleDeleteVoter(voter)}
+                                  disabled={voter.used}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -256,13 +416,6 @@ export function VotersPageClient({ elections, voters }: VotersPageClientProps) {
                   <div className="flex flex-col items-center justify-center py-12">
                     <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg mb-2">No voters yet</h3>
-                    <p className="text-sm text-muted-foreground mb-4 text-center">
-                      Import voters from a CSV file to get started
-                    </p>
-                    <Button onClick={() => setImportDialogOpen(true)}>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Import Voters
-                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -284,12 +437,67 @@ export function VotersPageClient({ elections, voters }: VotersPageClientProps) {
         )}
       </div>
 
+      <AddVoterDialog
+        electionId={selectedElectionId || ''}
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        onSuccess={handleImportSuccess}
+      />
+
       <ImportVotersDialog
         electionId={selectedElectionId}
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
         onSuccess={handleImportSuccess}
       />
+
+      <EditVoterDialog
+        voter={selectedVoter}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSuccess={handleEditSuccess}
+      />
+
+      <DeleteVoterDialog
+        voter={selectedVoter}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onSuccess={handleDeleteSuccess}
+      />
+
+      <AlertDialog
+        open={bulkDeleteDialogOpen}
+        onOpenChange={setBulkDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Selected Voters?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete{' '}
+              <span className="text-foreground font-medium">
+                {selectedCount} voter{selectedCount !== 1 ? 's' : ''}
+              </span>
+              . Only pending voters (who haven't voted) can be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button variant="outline" disabled={isDeletingBulk}>
+                Cancel
+              </Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button
+                variant="destructive"
+                onClick={handleBulkDelete}
+                disabled={isDeletingBulk}
+              >
+                {isDeletingBulk ? 'Deleting...' : 'Delete'}
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

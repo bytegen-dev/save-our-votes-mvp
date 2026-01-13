@@ -83,3 +83,65 @@ export async function castVote({
 
   return { ok: true };
 }
+
+// Cast votes for multiple ballots in a single transaction
+export async function castVotesForElection({
+  token,
+  electionId,
+  ballots,
+  meta,
+}: {
+  token: string;
+  electionId: string | Types.ObjectId;
+  ballots: Array<{ ballotId: string | Types.ObjectId; optionIds: any[] }>;
+  meta?: {
+    ip?: string;
+    userAgent?: string;
+  };
+}): Promise<{ ok: boolean }> {
+  const tokenHash = hashToken(token);
+
+  // Check token validity first
+  const vt = await VoterToken.findOne({ electionId, tokenHash, used: false });
+  if (!vt) {
+    throw new Error('Invalid or already used token');
+  }
+  if (vt.expiresAt && vt.expiresAt < new Date()) {
+    throw new Error('Token has expired');
+  }
+
+  // Validate all ballots and options before consuming token
+  const validatedBallots = [];
+  for (const { ballotId, optionIds } of ballots) {
+    const ballot = (await Ballot.findById(ballotId).lean()) as any;
+    if (!ballot || String(ballot.election) !== String(electionId)) {
+      throw new Error(`Ballot ${ballotId} not found for this election`);
+    }
+    const rule = RuleRegistry[ballot.type];
+    if (!rule) throw new Error(`Unsupported ballot type for ballot ${ballotId}`);
+    const validated = rule.validate(optionIds, ballot as IBallot);
+    validatedBallots.push({ ballotId, optionIds: validated });
+  }
+
+  // Atomically consume token and record all votes
+  const consumed = await VoterToken.findOneAndUpdate(
+    { election: electionId, tokenHash, used: false },
+    { $set: { used: true, usedAt: new Date() } },
+    { new: true }
+  );
+  if (!consumed) {
+    throw new Error('Invalid or already used token');
+  }
+
+  // Save all votes
+  await Vote.insertMany(
+    validatedBallots.map(({ ballotId, optionIds }) => ({
+      election: electionId,
+      ballot: ballotId,
+      optionIds,
+      meta,
+    }))
+  );
+
+  return { ok: true };
+}

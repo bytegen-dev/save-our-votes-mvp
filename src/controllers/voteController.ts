@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import AppError from '../Util/AppError';
 import catchAsync from '../Util/catchAsync';
-import { validateToken, castVote } from '../services/voteService';
+import { validateToken, castVote, castVotesForElection } from '../services/voteService';
 import { TallyRegistry } from '../domain/voting/tally';
 import Election from '../model/electionModel.js';
 import { IElection } from '../Interfaces/electionInterface';
@@ -33,7 +33,23 @@ const castFactory = () =>
     const meta = { ip: req.ip, userAgent: req.headers['user-agent'] as string };
     await castVote({ token, electionId, ballotId, optionIds, meta });
 
-    res.json({ status: 'success', message: 'Vote recorded' });
+  res.json({ status: 'success', message: 'Vote recorded' });
+});
+
+// Factory: cast votes for multiple ballots
+const castVotesFactory = () =>
+  catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const { token, electionId, ballots } = req.body || {};
+    if (!token || !electionId || !ballots || !Array.isArray(ballots)) {
+      return next(
+        new AppError('token, electionId, and ballots array required', 400)
+      );
+    }
+
+    const meta = { ip: req.ip, userAgent: req.headers['user-agent'] as string };
+    await castVotesForElection({ token, electionId, ballots, meta });
+
+    res.json({ status: 'success', message: 'Votes recorded' });
   });
 
 // Factory: get results for ballot
@@ -88,5 +104,6 @@ const resultsForElectionFactory = () =>
 
 export const validateVoterToken = validateVoterTokenFactory();
 export const cast = castFactory();
+export const castVotes = castVotesFactory();
 export const resultsForBallot = resultsForBallotFactory();
 export const resultsForElection = resultsForElectionFactory();

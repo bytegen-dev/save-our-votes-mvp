@@ -16,6 +16,7 @@ import { api } from '@/lib/api/client';
 import { showToast } from '@/lib/toast';
 import { Upload, FileText, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { TokensDisplayDialog } from './tokens-display-dialog';
 
 interface ImportVotersDialogProps {
   electionId: string;
@@ -35,7 +36,9 @@ export function ImportVotersDialog({
   const [importResult, setImportResult] = useState<{
     success: number;
     errors: string[];
+    voters: Array<{ email: string; token: string }>;
   } | null>(null);
+  const [showTokensDialog, setShowTokensDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,20 +67,27 @@ export function ImportVotersDialog({
 
       if (response.status === 'success') {
         setImportResult(response.data);
-        if (response.data.errors.length === 0) {
+        if (response.data.success > 0) {
           showToast.success(
-            `Successfully imported ${response.data.success} voters!`
+            `Successfully imported ${response.data.success} voter${response.data.success !== 1 ? 's' : ''}!`
           );
+          
+          // Show tokens dialog if we have voters with tokens
+          if (response.data.voters && response.data.voters.length > 0) {
+            setShowTokensDialog(true);
+          }
+          
           onSuccess();
-          onOpenChange(false);
-          setSelectedFile(null);
-          if (fileInputRef.current) {
-            fileInputRef.current.value = '';
+          
+          // Only close if no errors or if user wants to proceed
+          if (response.data.errors.length === 0) {
+            setSelectedFile(null);
+            if (fileInputRef.current) {
+              fileInputRef.current.value = '';
+            }
           }
         } else {
-          showToast.warning(
-            `Imported ${response.data.success} voters with ${response.data.errors.length} errors`
-          );
+          showToast.error('No voters were imported');
         }
       }
     } catch (error: any) {
@@ -186,6 +196,23 @@ export function ImportVotersDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {importResult?.voters && importResult.voters.length > 0 && (
+        <TokensDisplayDialog
+          open={showTokensDialog}
+          onOpenChange={(open) => {
+            setShowTokensDialog(open);
+            if (!open && importResult.errors.length === 0) {
+              onOpenChange(false);
+              setSelectedFile(null);
+              if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+              }
+            }
+          }}
+          voters={importResult.voters}
+        />
+      )}
     </Dialog>
   );
 }

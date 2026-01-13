@@ -15,10 +15,16 @@ export interface VotersResponse {
   };
 }
 
+export interface ImportedVoter {
+  email: string;
+  token: string;
+}
+
 export interface VoterImportResponse {
   status: 'success';
   data: {
     success: number;
     errors: string[];
+    voters: ImportedVoter[];
   };
 }

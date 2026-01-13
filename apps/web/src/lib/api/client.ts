@@ -3,7 +3,11 @@ import type {
   ElectionResponse,
   Election,
 } from '@/lib/types/election';
-import type { VotersResponse, VoterImportResponse } from '@/lib/types/voter';
+import type {
+  VotersResponse,
+  VoterImportResponse,
+  Voter,
+} from '@/lib/types/voter';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -70,6 +74,8 @@ export const api = {
   elections: {
     list: () => fetchApi<ElectionsResponse>('/elections'),
     get: (id: string) => fetchApi<ElectionResponse>(`/elections/${id}`),
+    getBySlug: (slug: string) =>
+      fetchApi<ElectionResponse>(`/elections/slug/${slug}`),
     create: (data: Partial<Election>) =>
       fetchApi<ElectionResponse>('/elections', {
         method: 'POST',
@@ -126,6 +132,11 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    castAll: (data: unknown) =>
+      fetchApi('/vote/cast-all', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
     getResults: (electionId: string) =>
       fetchApi<{
         status: 'success';
@@ -147,9 +158,52 @@ export const api = {
         };
       }>(`/vote/results/${electionId}`),
   },
+  tokens: {
+    generate: (
+      electionId: string,
+      data: { emails: string[]; expiryHours?: number }
+    ) =>
+      fetchApi<{
+        status: 'success';
+        count: number;
+        data: { tokens: Array<{ email: string; token: string }> };
+      }>(`/elections/${electionId}/tokens`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+  },
   voters: {
     list: (electionId: string) =>
       fetchApi<VotersResponse>(`/voters/${electionId}`),
+    add: (electionId: string, data: { email: string; expiryHours?: number }) =>
+      fetchApi<{
+        status: 'success';
+        data: {
+          voter: Voter;
+          token: string;
+        };
+      }>(`/voters/${electionId}`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    update: (voterId: string, data: { email: string }) =>
+      fetchApi<VotersResponse>(`/voters/${voterId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    delete: (voterId: string) =>
+      fetchApi<{ status: 'success'; message: string }>(`/voters/${voterId}`, {
+        method: 'DELETE',
+      }),
+    deleteBulk: (voterIds: string[]) =>
+      fetchApi<{
+        status: 'success';
+        message: string;
+        deletedCount: number;
+      }>('/voters/bulk', {
+        method: 'DELETE',
+        body: JSON.stringify({ voterIds }),
+      }),
     importCSV: (electionId: string, file: File) => {
       const formData = new FormData();
       formData.append('file', file);
