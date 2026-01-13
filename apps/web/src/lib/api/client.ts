@@ -71,6 +71,28 @@ async function fetchApi<T>(
 }
 
 export const api = {
+  dashboard: {
+    getStats: () =>
+      fetchApi<{
+        status: 'success';
+        data: {
+          overall: {
+            totalVoters: number;
+            totalVotes: number;
+            votersWhoVoted: number;
+            overallTurnout: number;
+          };
+          elections: Array<{
+            electionId: string;
+            electionTitle: string;
+            voters: number;
+            voted: number;
+            votes: number;
+            turnout: number;
+          }>;
+        };
+      }>('/dashboard/stats'),
+  },
   elections: {
     list: () => fetchApi<ElectionsResponse>('/elections'),
     get: (id: string) => fetchApi<ElectionResponse>(`/elections/${id}`),

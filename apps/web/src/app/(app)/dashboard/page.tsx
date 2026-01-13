@@ -1,12 +1,12 @@
 import { requireAuth } from '@/lib/auth/middleware';
 import { api } from '@/lib/api/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, BarChart3, Calendar, Users } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Plus, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import type { Election } from '@/lib/types/election';
 import { ElectionsGrid } from '@/components/elections/elections-grid';
-import { getElectionStatus } from '@/components/elections/election-status';
+import { DashboardClient } from './dashboard-client';
 
 async function getElections() {
   try {
@@ -18,22 +18,20 @@ async function getElections() {
   }
 }
 
+async function getDashboardStats() {
+  try {
+    const response = await api.dashboard.getStats();
+    return response.data || null;
+  } catch (error) {
+    console.error('Failed to fetch dashboard stats:', error);
+    return null;
+  }
+}
+
 export default async function DashboardPage() {
   const session = await requireAuth();
   const elections = await getElections();
-
-  const totalElections = elections.length;
-  const activeElections = elections.filter(
-    (e) => getElectionStatus(e) === 'open'
-  ).length;
-  const scheduledElections = elections.filter(
-    (e) => getElectionStatus(e) === 'scheduled'
-  ).length;
-  const closedElections = elections.filter(
-    (e) => getElectionStatus(e) === 'closed'
-  ).length;
-
-  const totalVoters = 0;
+  const stats = await getDashboardStats();
 
   return (
     <div className="space-y-8 p-6">
@@ -52,62 +50,7 @@ export default async function DashboardPage() {
         </Button>
       </div>
 
-      <div
-        className="grid gap-4"
-        style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}
-      >
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm">Total Elections</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalElections}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {scheduledElections} scheduled, {closedElections} completed
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm">Active Elections</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeElections}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Currently running
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm">Total Voters</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalVoters}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Registered voters
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm">Scheduled</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{scheduledElections}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Upcoming elections
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <DashboardClient elections={elections} initialStats={stats} />
 
       <div>
         <h2 className="text-2xl mb-4">Elections</h2>

@@ -38,7 +38,7 @@ import { EditElectionDialog } from '@/components/elections/edit-election-dialog'
 import { DeleteElectionDialog } from '@/components/elections/delete-election-dialog';
 import { CreateBallotDialog } from '@/components/ballots/create-ballot-dialog';
 import { EditBallotDialog } from '@/components/ballots/edit-ballot-dialog';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,10 +61,15 @@ import {
 
 interface ElectionDetailClientProps {
   election: Election;
+  voterCount?: number;
 }
 
-export function ElectionDetailClient({ election }: ElectionDetailClientProps) {
+export function ElectionDetailClient({
+  election,
+  voterCount = 0,
+}: ElectionDetailClientProps) {
   const router = useRouter();
+  const [, setNow] = useState(new Date());
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [createBallotDialogOpen, setCreateBallotDialogOpen] = useState(false);
@@ -80,6 +85,15 @@ export function ElectionDetailClient({ election }: ElectionDetailClientProps) {
 
   const startAt = new Date(election.startAt);
   const endAt = new Date(election.endAt);
+
+  // Update every minute to refresh status
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(new Date());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSuccess = () => {
     router.refresh();
@@ -358,8 +372,7 @@ export function ElectionDetailClient({ election }: ElectionDetailClientProps) {
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">Voters</span>
                 </div>
-                <span className="text-2xl">0</span>
-                {/* TODO: Fetch actual voter count */}
+                <span className="text-2xl">{voterCount}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">

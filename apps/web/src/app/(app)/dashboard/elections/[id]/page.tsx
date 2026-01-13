@@ -14,6 +14,16 @@ async function getElection(id: string): Promise<Election | null> {
   }
 }
 
+async function getVoterCount(electionId: string): Promise<number> {
+  try {
+    const response = await api.voters.list(electionId);
+    return response.data.voters?.length || 0;
+  } catch (error) {
+    console.error('Failed to fetch voter count:', error);
+    return 0;
+  }
+}
+
 export default async function ElectionDetailPage({
   params,
 }: {
@@ -27,5 +37,7 @@ export default async function ElectionDetailPage({
     notFound();
   }
 
-  return <ElectionDetailClient election={election} />;
+  const voterCount = await getVoterCount(id);
+
+  return <ElectionDetailClient election={election} voterCount={voterCount} />;
 }

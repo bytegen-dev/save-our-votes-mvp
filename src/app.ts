@@ -9,6 +9,7 @@ import authRoutes from './Routes/authRoute.js';
 import electionRouter from './Routes/electionRoute.js';
 import voteRouter from './Routes/voteRoute.js';
 import voterRouter from './Routes/voterRoute';
+import dashboardRouter from './Routes/dashboardRoute.js';
 
 dotenv.config();
 
@@ -46,6 +47,7 @@ app.use('/api/auth/', authRoutes);
 app.use('/api/elections', electionRouter);
 app.use('/api/vote', voteRouter);
 app.use('/api/voters', voterRouter);
+app.use('/api/dashboard', dashboardRouter);
 
 // Global error handling middleware
 app.use(

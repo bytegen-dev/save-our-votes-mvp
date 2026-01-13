@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Card,
@@ -43,8 +44,18 @@ export function ElectionCard({
   onPublish,
 }: ElectionCardProps) {
   const router = useRouter();
+  const [, setNow] = useState(new Date());
   const startAt = new Date(election.startAt);
   const endAt = new Date(election.endAt);
+
+  // Update every minute to refresh status
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(new Date());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleCardClick = () => {
     router.push(`/dashboard/elections/${election._id}`);
