@@ -6,6 +6,8 @@ const optionSchema = new Schema<IOption>(
     _id: { type: Schema.Types.ObjectId, auto: true },
     text: { type: String, required: true, trim: true },
     order: { type: Number, default: 0 },
+    photo: { type: String, trim: true },
+    bio: { type: String, trim: true },
   },
   { _id: true }
 );

@@ -12,6 +12,8 @@ export const createBallotSchema = z.object({
       z.object({
         text: z.string().min(1, 'Option text is required'),
         order: z.number().default(0),
+        photo: z.union([z.string().url('Photo must be a valid URL'), z.literal(''), z.undefined()]).optional(),
+        bio: z.string().max(1000, 'Bio must be less than 1000 characters').optional(),
       })
     )
     .min(2, 'At least 2 options are required'),

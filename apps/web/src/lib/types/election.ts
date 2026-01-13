@@ -23,6 +23,8 @@ export interface Election {
       _id: string;
       text: string;
       order: number;
+      photo?: string;
+      bio?: string;
     }>;
     isActive: boolean;
   }>;

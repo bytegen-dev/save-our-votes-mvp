@@ -4,6 +4,8 @@ export interface IOption {
   _id?: Types.ObjectId;
   text: string;
   order: number;
+  photo?: string;
+  bio?: string;
 }
 
 export interface IBallot {

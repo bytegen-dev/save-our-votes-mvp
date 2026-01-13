@@ -11,6 +11,8 @@ interface AvatarCropDialogProps {
   onOpenChange: (open: boolean) => void;
   imageSrc: string;
   onCropComplete: (croppedImage: string) => void;
+  title?: string;
+  description?: string;
 }
 
 export function AvatarCropDialog({
@@ -18,6 +20,8 @@ export function AvatarCropDialog({
   onOpenChange,
   imageSrc,
   onCropComplete,
+  title = 'Crop Profile Photo',
+  description = 'Adjust and crop your image to make it square',
 }: AvatarCropDialogProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -102,9 +106,9 @@ export function AvatarCropDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Crop Profile Photo</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Adjust and crop your image to make it square
+            {description}
           </DialogDescription>
         </DialogHeader>
         <div className="relative w-full h-[400px] bg-black rounded-lg overflow-hidden">

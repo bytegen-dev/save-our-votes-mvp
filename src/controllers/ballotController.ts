@@ -26,6 +26,8 @@ const addBallotFactory = () =>
       options: options.map((o: any, i: number) => ({
         text: o.text.trim(),
         order: o.order ?? i,
+        photo: o.photo || undefined,
+        bio: o.bio || undefined,
       })),
     };
 
@@ -71,7 +73,7 @@ const getBallotFactory = () =>
 const updateBallotFactory = () =>
   catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const { electionId, ballotId } = req.params;
-    const { title, description, isActive } = req.body || {};
+    const { title, description, type, maxSelections, options, isActive } = req.body || {};
 
     const election = await Election.findById(electionId);
     if (!election) return next(new AppError('Election not found', 404));
@@ -81,7 +83,17 @@ const updateBallotFactory = () =>
 
     if (title) ballot.title = title.trim();
     if (description !== undefined) ballot.description = description.trim();
+    if (type) ballot.type = type;
+    if (maxSelections !== undefined) ballot.maxSelections = maxSelections;
     if (isActive !== undefined) ballot.isActive = isActive;
+    if (options && Array.isArray(options) && options.length >= 2) {
+      ballot.options = options.map((o: any, i: number) => ({
+        text: o.text.trim(),
+        order: o.order ?? i,
+        photo: o.photo || undefined,
+        bio: o.bio || undefined,
+      }));
+    }
 
     await election.save();
     res.json({ status: 'success', data: { ballot } });

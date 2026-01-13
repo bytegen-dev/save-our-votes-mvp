@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { UserMenu } from '@/components/layout/user-menu';
@@ -95,6 +95,9 @@ export function Header({ session }: HeaderProps) {
   const [electionId, setElectionId] = useState<string | undefined>();
   const [ballotTitle, setBallotTitle] = useState<string | undefined>();
   const [ballotId, setBallotId] = useState<string | undefined>();
+  const [showLeftGradient, setShowLeftGradient] = useState(false);
+  const [showRightGradient, setShowRightGradient] = useState(false);
+  const breadcrumbRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let id: string | null = null;
@@ -155,10 +158,30 @@ export function Header({ session }: HeaderProps) {
 
   const { toggle } = useSidebar();
 
+  const checkScrollPosition = () => {
+    if (!breadcrumbRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = breadcrumbRef.current;
+    setShowLeftGradient(scrollLeft > 0);
+    setShowRightGradient(scrollLeft < scrollWidth - clientWidth - 1);
+  };
+
+  useEffect(() => {
+    checkScrollPosition();
+    const element = breadcrumbRef.current;
+    if (element) {
+      element.addEventListener('scroll', checkScrollPosition);
+      window.addEventListener('resize', checkScrollPosition);
+      return () => {
+        element.removeEventListener('scroll', checkScrollPosition);
+        window.removeEventListener('resize', checkScrollPosition);
+      };
+    }
+  }, [breadcrumbs]);
+
   return (
     <header className="sticky top-0 z-10 h-16 flex py-4 items-center border-b bg-background/70 backdrop-blur-sm">
-      <div className="container-max flex w-full items-center justify-between px-6">
-        <div className="flex items-center gap-4 min-w-0">
+      <div className="container-max flex w-full items-center justify-between px-6 gap-4">
+        <div className="flex items-center gap-4 min-w-0 flex-1">
           <Link href="/dashboard" className="flex items-center shrink-0">
             <Image
               src="/logo.png"
@@ -169,36 +192,51 @@ export function Header({ session }: HeaderProps) {
               priority
             />
           </Link>
-          {breadcrumbs.map((item, index) => {
-            const isElectionTitle = item.label === electionTitle;
-            return (
-              <div key={index} className="flex items-center gap-2">
-                {index > 0 && (
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                )}
-                {item.href ? (
-                  <Link
-                    href={item.href}
-                    className={`text-sm font-light text-muted-foreground hover:text-foreground transition-colors truncate ${
-                      isElectionTitle ? 'max-w-[70px]' : 'max-w-[200px]'
-                    }`}
-                    title={item.label}
-                  >
-                    {item.label}
-                  </Link>
-                ) : (
-                  <span
-                    className={`text-sm font-light truncate ${
-                      isElectionTitle ? 'max-w-[70px]' : 'max-w-[200px]'
-                    }`}
-                    title={item.label}
-                  >
-                    {item.label}
-                  </span>
-                )}
-              </div>
-            );
-          })}
+          <div className="relative flex-1 min-w-0">
+            <div
+              ref={breadcrumbRef}
+              className="flex items-center gap-2 overflow-x-auto scrollbar-hide"
+            >
+              {breadcrumbs.map((item, index) => {
+                const isElectionTitle = item.label === electionTitle;
+                const isBallotTitle = item.label === ballotTitle;
+                const maxWidth =
+                  isElectionTitle || isBallotTitle
+                    ? 'max-w-[70px]'
+                    : 'max-w-[200px]';
+
+                return (
+                  <div key={index} className="flex items-center gap-2 shrink-0">
+                    {index > 0 && (
+                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                    )}
+                    {item.href ? (
+                      <Link
+                        href={item.href}
+                        className={`text-sm font-light text-muted-foreground hover:text-foreground transition-colors truncate ${maxWidth}`}
+                        title={item.label}
+                      >
+                        {item.label}
+                      </Link>
+                    ) : (
+                      <span
+                        className={`text-sm font-light truncate ${maxWidth}`}
+                        title={item.label}
+                      >
+                        {item.label}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {showLeftGradient && (
+              <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background via-background/70 to-transparent pointer-events-none z-10" />
+            )}
+            {showRightGradient && (
+              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background via-background/70 to-transparent pointer-events-none z-10" />
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-4 min-w-0">
           <UserMenu user={session.user || {}} />

@@ -28,8 +28,9 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { showToast } from '@/lib/toast';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import type { Election } from '@/lib/types/election';
+import { CandidateOptionInput } from './candidate-option-input';
 
 interface EditBallotDialogProps {
   electionId: string;
@@ -53,6 +54,7 @@ export function EditBallotDialog({
     handleSubmit,
     control,
     watch,
+    setValue,
     reset,
     formState: { errors },
   } = useForm<CreateBallotInput>({
@@ -86,6 +88,8 @@ export function EditBallotDialog({
         options: ballot.options.map((opt) => ({
           text: opt.text,
           order: opt.order,
+          photo: opt.photo,
+          bio: opt.bio,
         })),
       });
     } else if (!open) {
@@ -110,6 +114,8 @@ export function EditBallotDialog({
         options: data.options.map((opt, index) => ({
           text: opt.text,
           order: opt.order ?? index,
+          photo: opt.photo || undefined,
+          bio: opt.bio || undefined,
         })),
       };
 
@@ -211,42 +217,35 @@ export function EditBallotDialog({
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>Options *</Label>
+              <Label>Candidates *</Label>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => append({ text: '', order: fields.length })}
+                onClick={() =>
+                  append({
+                    text: '',
+                    order: fields.length,
+                    photo: undefined,
+                    bio: undefined,
+                  })
+                }
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Add Option
+                Add Candidate
               </Button>
             </div>
             {fields.map((field, index) => (
-              <div key={field.id} className="flex items-start gap-2">
-                <div className="flex-1">
-                  <Input
-                    placeholder={`Option ${index + 1}`}
-                    {...register(`options.${index}.text`)}
-                  />
-                  {errors.options?.[index]?.text && (
-                    <p className="text-sm text-destructive mt-1">
-                      {errors.options[index]?.text?.message}
-                    </p>
-                  )}
-                </div>
-                {fields.length > 2 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => remove(index)}
-                    className="mt-0"
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                )}
-              </div>
+              <CandidateOptionInput
+                key={field.id}
+                value={watch(`options.${index}`) || { text: '', order: index }}
+                onChange={(newValue) => {
+                  setValue(`options.${index}`, newValue);
+                }}
+                onRemove={fields.length > 2 ? () => remove(index) : undefined}
+                index={index}
+                canRemove={fields.length > 2}
+              />
             ))}
             {errors.options && typeof errors.options.message === 'string' && (
               <p className="text-sm text-destructive">
