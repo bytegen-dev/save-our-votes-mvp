@@ -24,6 +24,8 @@ import {
   FileText,
   Settings,
   Info,
+  Globe,
+  Minus,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -147,11 +149,11 @@ export function ElectionDetailClient({ election }: ElectionDetailClientProps) {
               </Link>
             </Button>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl">{election.title}</h1>
+              <h1 className="text-2xl xl:text-3xl">{election.title}</h1>
               <ElectionStatusBadge election={election} />
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="hidden lg:flex items-center gap-2">
             {getElectionStatus(election) === 'draft' && (
               <Button
                 onClick={async () => {
@@ -168,6 +170,7 @@ export function ElectionDetailClient({ election }: ElectionDetailClientProps) {
                   }
                 }}
               >
+                <Globe className="mr-2 h-4 w-4" />
                 Publish
               </Button>
             )}
@@ -176,22 +179,90 @@ export function ElectionDetailClient({ election }: ElectionDetailClientProps) {
                 variant="outline"
                 onClick={() => setConvertToDraftDialogOpen(true)}
               >
+                <span className="relative mr-2 inline-block">
+                  <Globe className="h-4 w-4" />
+                  <Minus
+                    className="absolute top-1/2 left-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rotate-45"
+                    strokeWidth={3}
+                  />
+                </span>
                 Convert to Draft
               </Button>
             )}
             <Button
               variant="outline"
-              size="icon"
               onClick={() => setEditDialogOpen(true)}
-              title="Edit"
+              className="lg:flex lg:items-center lg:gap-2"
             >
-              <Edit className="h-4 w-4" />
+              <Edit className="h-4 w-4 lg:mr-2" />
+              <span className="hidden lg:inline">Edit</span>
             </Button>
-            <Button variant="outline" size="icon" asChild title="Duplicate">
+            <Button
+              variant="outline"
+              asChild
+              className="lg:flex lg:items-center lg:gap-2"
+            >
               <Link href={`/dashboard/elections/${election._id}/duplicate`}>
-                <Copy className="h-4 w-4" />
+                <Copy className="h-4 w-4 lg:mr-2" />
+                <span className="hidden lg:inline">Duplicate</span>
               </Link>
             </Button>
+          </div>
+          {/* Mobile: Dropdown menu */}
+          <div className="lg:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {getElectionStatus(election) === 'draft' && (
+                  <DropdownMenuItem
+                    onClick={async () => {
+                      try {
+                        await api.elections.publish(election._id);
+                        showToast.success('Election published successfully!');
+                        handleSuccess();
+                      } catch (error: any) {
+                        showToast.error(
+                          error?.data?.message ||
+                            error?.message ||
+                            'Failed to publish election'
+                        );
+                      }
+                    }}
+                  >
+                    <Globe className="mr-2 h-4 w-4" />
+                    Publish
+                  </DropdownMenuItem>
+                )}
+                {getElectionStatus(election) !== 'draft' && (
+                  <DropdownMenuItem
+                    onClick={() => setConvertToDraftDialogOpen(true)}
+                  >
+                    <span className="relative mr-2 inline-block">
+                      <Globe className="h-4 w-4" />
+                      <Minus
+                        className="absolute top-1/2 left-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rotate-45"
+                        strokeWidth={3}
+                      />
+                    </span>
+                    Convert to Draft
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => setEditDialogOpen(true)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/dashboard/elections/${election._id}/duplicate`}>
+                    <Copy className="mr-2 h-4 w-4" />
+                    Duplicate
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -260,8 +331,17 @@ export function ElectionDetailClient({ election }: ElectionDetailClientProps) {
           {/* Statistics */}
           <Card>
             <CardHeader>
-              <CardTitle>Statistics</CardTitle>
-              <CardDescription>Election metrics and data</CardDescription>
+              <div className="flex items-center gap-2">
+                <CardTitle>Statistics</CardTitle>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Election metrics and data</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
@@ -301,12 +381,17 @@ export function ElectionDetailClient({ election }: ElectionDetailClientProps) {
         {/* Ballots Section */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-2">
                 <CardTitle>Ballots</CardTitle>
-                <CardDescription>
-                  Manage the ballots for this election
-                </CardDescription>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Manage the ballots for this election</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <Button onClick={() => setCreateBallotDialogOpen(true)}>
                 Add Ballot

@@ -19,14 +19,12 @@ export default async function AppLayout({
       <div className="flex h-screen overflow-hidden">
         <Sidebar />
         <div
-          className="flex flex-1 flex-col overflow-hidden transition-all duration-300 data-[sidebar-collapsed=true]:ml-16 data-[sidebar-collapsed=false]:ml-64"
+          className="flex flex-1 flex-col overflow-y-auto transition-all duration-300 md:data-[sidebar-collapsed=true]:ml-16 md:data-[sidebar-collapsed=false]:ml-64"
           id="main-content"
           data-sidebar-collapsed={defaultCollapsed}
         >
           <Header session={session} />
-          <main className="flex-1 overflow-y-auto bg-background">
-            <div className="container-max">{children}</div>
-          </main>
+          <main className="flex-1 bg-background container-max">{children}</main>
         </div>
       </div>
     </SidebarProvider>

@@ -21,7 +21,8 @@ export const deleteOne = (Model: Model<any>) =>
         new AppError("Can't delete. No document found with that ID.", 404)
       );
     }
-    res.status(204).json({
+    // Use 200 instead of 204 since we're sending JSON
+    res.status(200).json({
       status: 'success',
       data: null,
     });
@@ -29,6 +30,9 @@ export const deleteOne = (Model: Model<any>) =>
 
 export const updateOne = (Model: Model<any>, opts: HandlerOptions = {}) =>
   catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    console.log('updateOne - req.body:', req.body);
+    console.log('updateOne - updating document ID:', req.params.id);
+    
     const doc = await Model.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: opts.runValidators ?? true,
@@ -37,6 +41,8 @@ export const updateOne = (Model: Model<any>, opts: HandlerOptions = {}) =>
     if (!doc) {
       return next(new AppError('No document found with that ID.', 404));
     }
+
+    console.log('updateOne - updated document:', doc.toObject());
 
     res.status(200).json({
       status: 'success',

@@ -6,6 +6,9 @@ import {
   updateElection,
   deleteElection,
   getElectionBySlug,
+  duplicateElection,
+  publishElection,
+  convertToDraft,
 } from '../controllers/electionController.js';
 import ballotRouter from './ballotRoute.js';
 import tokenRouter from './tokenRoute.js';
@@ -20,6 +23,9 @@ router.use('/:electionId/tokens', tokenRouter);
 router.get('/slug/:slug', getElectionBySlug);
 router.post('/', createElection);
 router.get('/', listElections);
+router.post('/:id/duplicate', duplicateElection);
+router.post('/:id/publish', publishElection);
+router.post('/:id/convert-to-draft', convertToDraft);
 router.get('/:id', getElection);
 router.put('/:id', updateElection);
 router.delete('/:id', deleteElection);

@@ -53,6 +53,38 @@ const resultsForBallotFactory = () =>
     res.json({ status: 'success', data: { ballotId, tallies } });
   });
 
+// Get all results for an election
+const resultsForElectionFactory = () =>
+  catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const { electionId } = req.params;
+
+    const election = await Election.findById(electionId).lean();
+    if (!election) return next(new AppError('Election not found', 404));
+
+    const results = await Promise.all(
+      election.ballots.map(async (ballot) => {
+        const strategy = TallyRegistry[ballot.type];
+        const tallies = await strategy(electionId, String(ballot._id));
+        return {
+          ballotId: String(ballot._id),
+          ballotTitle: ballot.title,
+          ballotDescription: ballot.description,
+          ballotType: ballot.type,
+          options: ballot.options.map((opt) => ({
+            optionId: String(opt._id),
+            text: opt.text,
+            order: opt.order,
+            votes: tallies[String(opt._id)] || 0,
+          })),
+          totalVotes: Object.values(tallies).reduce((sum, count) => sum + count, 0),
+        };
+      })
+    );
+
+    res.json({ status: 'success', data: { electionId, results } });
+  });
+
 export const validateVoterToken = validateVoterTokenFactory();
 export const cast = castFactory();
 export const resultsForBallot = resultsForBallotFactory();
+export const resultsForElection = resultsForElectionFactory();

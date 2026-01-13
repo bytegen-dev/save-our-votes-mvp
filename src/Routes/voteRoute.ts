@@ -3,12 +3,14 @@ import {
   validateVoterToken,
   cast,
   resultsForBallot,
+  resultsForElection,
 } from '../controllers/voteController.js';
 
 const router: Router = express.Router();
 
 router.post('/validate', validateVoterToken);
 router.post('/cast', cast);
+router.get('/results/:electionId', resultsForElection);
 router.get('/results/:electionId/:ballotId', resultsForBallot);
 
 export default router;

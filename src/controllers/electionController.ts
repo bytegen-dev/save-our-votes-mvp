@@ -56,7 +56,7 @@ export const createElection = async (
       organizer,
       startAt: start,
       endAt: end,
-      status: 'scheduled',
+      status: 'draft', // Default to draft - admin must publish
     });
 
     res.status(201).json({
@@ -99,6 +99,126 @@ export const getElectionBySlug = async (
     );
     if (!election) return next(new AppError('Election not found', 404));
     res.status(200).json({ status: 'success', data: { election } });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const duplicateElection = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const { title } = req.body;
+
+    const originalElection = await Election.findById(id);
+    if (!originalElection) {
+      return next(new AppError('Election not found', 404));
+    }
+
+    const organizer = req.user && req.user._id ? req.user._id : originalElection.organizer;
+    if (!organizer) {
+      return next(new AppError('Organizer not found', 401));
+    }
+
+    const now = new Date();
+    const defaultStart = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const defaultEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+    const duplicatedElection = await Election.create({
+      title: title || `Copy of ${originalElection.title}`,
+      description: originalElection.description,
+      organizer,
+      startAt: defaultStart,
+      endAt: defaultEnd,
+      status: 'draft',
+      ballots: originalElection.ballots || [],
+    });
+
+    res.status(201).json({
+      status: 'success',
+      data: { election: duplicatedElection },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const publishElection = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const election = await Election.findById(id);
+
+    if (!election) {
+      return next(new AppError('Election not found', 404));
+    }
+
+    if (election.status !== 'draft') {
+      return next(
+        new AppError('Only draft elections can be published', 400)
+      );
+    }
+
+    // Calculate status based on dates
+    const now = new Date();
+    const startAt = new Date(election.startAt);
+    const endAt = new Date(election.endAt);
+
+    let calculatedStatus: 'scheduled' | 'open' | 'closed';
+    if (now < startAt) {
+      calculatedStatus = 'scheduled';
+    } else if (now >= startAt && now <= endAt) {
+      calculatedStatus = 'open';
+    } else {
+      calculatedStatus = 'closed';
+    }
+
+    // Update status from draft to calculated status
+    election.status = calculatedStatus;
+    await election.save();
+
+    res.status(200).json({
+      status: 'success',
+      data: { election },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const convertToDraft = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const election = await Election.findById(id);
+
+    if (!election) {
+      return next(new AppError('Election not found', 404));
+    }
+
+    if (election.status === 'draft') {
+      return next(
+        new AppError('Election is already a draft', 400)
+      );
+    }
+
+    // Convert to draft
+    election.status = 'draft';
+    await election.save();
+
+    res.status(200).json({
+      status: 'success',
+      data: { election },
+    });
   } catch (err) {
     next(err);
   }

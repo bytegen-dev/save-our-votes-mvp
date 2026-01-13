@@ -169,29 +169,36 @@ export function Header({ session }: HeaderProps) {
               priority
             />
           </Link>
-          {breadcrumbs.map((item, index) => (
-            <div key={index} className="flex items-center gap-2">
-              {index > 0 && (
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              )}
-              {item.href ? (
-                <Link
-                  href={item.href}
-                  className="text-sm font-light text-muted-foreground hover:text-foreground transition-colors truncate max-w-[200px]"
-                  title={item.label}
-                >
-                  {item.label}
-                </Link>
-              ) : (
-                <span
-                  className="text-sm font-light truncate max-w-[200px]"
-                  title={item.label}
-                >
-                  {item.label}
-                </span>
-              )}
-            </div>
-          ))}
+          {breadcrumbs.map((item, index) => {
+            const isElectionTitle = item.label === electionTitle;
+            return (
+              <div key={index} className="flex items-center gap-2">
+                {index > 0 && (
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                )}
+                {item.href ? (
+                  <Link
+                    href={item.href}
+                    className={`text-sm font-light text-muted-foreground hover:text-foreground transition-colors truncate ${
+                      isElectionTitle ? 'max-w-[70px]' : 'max-w-[200px]'
+                    }`}
+                    title={item.label}
+                  >
+                    {item.label}
+                  </Link>
+                ) : (
+                  <span
+                    className={`text-sm font-light truncate ${
+                      isElectionTitle ? 'max-w-[70px]' : 'max-w-[200px]'
+                    }`}
+                    title={item.label}
+                  >
+                    {item.label}
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
         <div className="flex items-center gap-4 min-w-0">
           <UserMenu user={session.user || {}} />
