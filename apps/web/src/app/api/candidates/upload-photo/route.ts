@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@/lib/auth/config';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import { put } from '@vercel/blob';
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,27 +42,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const uploadsDir = join(process.cwd(), 'apps', 'web', 'public', 'candidates');
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
-    }
-
-    let extension = 'png';
-    if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
+    let extension = 'jpg';
+    if (file.type === 'image/png') {
+      extension = 'png';
+    } else if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
       extension = 'jpg';
     } else if (file.type === 'image/heic') {
       extension = 'heic';
     }
 
-    const fileName = `candidate-${Date.now()}-${Math.random().toString(36).substring(7)}.${extension}`;
-    const filePath = join(uploadsDir, fileName);
+    const fileName = `candidates/candidate-${Date.now()}-${Math.random().toString(36).substring(7)}.${extension}`;
+    
+    const blob = await put(fileName, file, {
+      access: 'public',
+      contentType: file.type,
+    });
 
-    await writeFile(filePath, buffer);
-
-    const imageUrl = `/candidates/${fileName}`;
+    const imageUrl = blob.url;
 
     return NextResponse.json({
       status: 'success',

@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@/lib/auth/config';
 import { MongoClient } from 'mongodb';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import { put } from '@vercel/blob';
 
 const getDB = async () => {
   const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/save-our-votes';
@@ -54,27 +52,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const uploadsDir = join(process.cwd(), 'public', 'avatars');
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
-    }
-
-    let extension = 'png';
-    if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
+    let extension = 'jpg';
+    if (file.type === 'image/png') {
+      extension = 'png';
+    } else if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
       extension = 'jpg';
     } else if (file.type === 'image/heic') {
       extension = 'heic';
     }
 
-    const fileName = `${session.user.id}-${Date.now()}.${extension}`;
-    const filePath = join(uploadsDir, fileName);
+    const fileName = `avatars/${session.user.id}-${Date.now()}.${extension}`;
+    
+    const blob = await put(fileName, file, {
+      access: 'public',
+      contentType: file.type,
+    });
 
-    await writeFile(filePath, buffer);
-
-    const imageUrl = `/avatars/${fileName}`;
+    const imageUrl = blob.url;
 
     const database = await getDB();
     const userCollection = database.collection('user');
