@@ -28,6 +28,11 @@ export interface Election {
     }>;
     isActive: boolean;
   }>;
+  branding?: {
+    logo?: string;
+    primaryColor?: string;
+    secondaryColor?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }

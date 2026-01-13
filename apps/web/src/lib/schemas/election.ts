@@ -8,6 +8,11 @@ const baseElectionSchema = z.object({
   startAt: z.string().min(1, 'Start date is required'),
   endAt: z.string().min(1, 'End date is required'),
   draft: z.boolean().optional().default(false),
+  branding: z.object({
+    logo: z.string().url().optional().or(z.literal('')),
+    primaryColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Invalid color format').optional().or(z.literal('')),
+    secondaryColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Invalid color format').optional().or(z.literal('')),
+  }).optional(),
 });
 
 // Create schema with date validation

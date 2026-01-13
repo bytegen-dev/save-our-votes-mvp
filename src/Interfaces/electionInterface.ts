@@ -28,6 +28,11 @@ export interface IElection extends Document {
   endAt: Date;
   status: 'draft' | 'scheduled' | 'open' | 'closed';
   ballots: IBallot[];
+  branding?: {
+    logo?: string;
+    primaryColor?: string;
+    secondaryColor?: string;
+  };
   createdAt: Date;
   updatedAt: Date;
 }

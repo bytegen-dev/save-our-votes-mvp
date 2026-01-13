@@ -20,6 +20,7 @@ import { showToast } from '@/lib/toast';
 import { ArrowLeft, Info } from 'lucide-react';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
+import { ElectionBranding } from '@/components/elections/election-branding';
 
 interface NewElectionFormProps {
   userId: string;
@@ -28,17 +29,26 @@ interface NewElectionFormProps {
 export function NewElectionForm({ userId }: NewElectionFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [logo, setLogo] = useState<string>('');
+  const [primaryColor, setPrimaryColor] = useState<string>('#000000');
+  const [secondaryColor, setSecondaryColor] = useState<string>('#666666');
 
   const {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
   } = useForm<CreateElectionInput>({
     resolver: zodResolver(createElectionSchema),
     defaultValues: {
       description: '',
       draft: false,
+      branding: {
+        logo: '',
+        primaryColor: '#000000',
+        secondaryColor: '#666666',
+      },
     },
   });
 
@@ -57,6 +67,11 @@ export function NewElectionForm({ userId }: NewElectionFormProps) {
         startAt: new Date(data.startAt).toISOString(),
         endAt: new Date(data.endAt).toISOString(),
         organizerId: userId,
+        branding: logo || primaryColor !== '#000000' || secondaryColor !== '#666666' ? {
+          logo: logo || undefined,
+          primaryColor: primaryColor !== '#000000' ? primaryColor : undefined,
+          secondaryColor: secondaryColor !== '#666666' ? secondaryColor : undefined,
+        } : undefined,
       });
 
       if (response.status === 'success') {
@@ -229,6 +244,24 @@ export function NewElectionForm({ userId }: NewElectionFormProps) {
           </form>
         </CardContent>
       </Card>
+
+      <ElectionBranding
+        logo={logo}
+        primaryColor={primaryColor}
+        secondaryColor={secondaryColor}
+        onLogoChange={(url) => {
+          setLogo(url);
+          setValue('branding.logo', url);
+        }}
+        onPrimaryColorChange={(color) => {
+          setPrimaryColor(color);
+          setValue('branding.primaryColor', color);
+        }}
+        onSecondaryColorChange={(color) => {
+          setSecondaryColor(color);
+          setValue('branding.secondaryColor', color);
+        }}
+      />
     </div>
   );
 }

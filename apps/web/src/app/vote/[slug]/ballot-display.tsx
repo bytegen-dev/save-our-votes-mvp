@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -127,16 +128,51 @@ export function BallotDisplay({ election, token }: BallotDisplayProps) {
     }
   };
 
+  const primaryColor = election.branding?.primaryColor || '#000000';
+  const secondaryColor = election.branding?.secondaryColor || '#666666';
+  const logo = election.branding?.logo;
+
   if (hasVoted) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-        <Card className="w-full max-w-md">
+      <div 
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{
+          backgroundColor: primaryColor,
+          color: secondaryColor,
+        }}
+      >
+        <Card 
+          className="w-full max-w-md"
+          style={{
+            backgroundColor: secondaryColor,
+            color: primaryColor,
+            borderColor: primaryColor,
+          }}
+        >
           <CardHeader className="text-center">
+            {logo && (
+              <div className="relative w-20 h-20 mx-auto mb-4">
+                <Image
+                  src={logo}
+                  alt="Election logo"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+            )}
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
               <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
             </div>
-            <CardTitle className="text-2xl">Vote Submitted Successfully!</CardTitle>
-            <CardDescription className="mt-2">
+            <CardTitle 
+              className="text-2xl"
+              style={{ color: primaryColor }}
+            >
+              Vote Submitted Successfully!
+            </CardTitle>
+            <CardDescription 
+              className="mt-2"
+              style={{ color: primaryColor, opacity: 0.8 }}
+            >
               Thank you for participating in this election.
             </CardDescription>
           </CardHeader>
@@ -161,20 +197,54 @@ export function BallotDisplay({ election, token }: BallotDisplayProps) {
 
   return (
     <>
-      <div className="min-h-screen p-4 bg-background">
+      <div 
+        className="min-h-screen p-4"
+        style={{
+          backgroundColor: primaryColor,
+          color: secondaryColor,
+        }}
+      >
         <div className="max-w-4xl mx-auto space-y-6">
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl">{election.title}</h1>
-            {election.description && (
-              <p className="text-muted-foreground">{election.description}</p>
+          <div className="text-center space-y-4">
+            {logo && (
+              <div className="relative w-24 h-24 mx-auto">
+                <Image
+                  src={logo}
+                  alt="Election logo"
+                  fill
+                  className="object-contain"
+                />
+              </div>
             )}
+            <div className="space-y-2">
+              <h1 
+                className="text-3xl"
+                style={{ color: secondaryColor }}
+              >
+                {election.title}
+              </h1>
+              {election.description && (
+                <p style={{ color: secondaryColor, opacity: 0.9 }}>
+                  {election.description}
+                </p>
+              )}
+            </div>
           </div>
 
           {totalBallots > 1 && (
-            <Card>
+            <Card
+              style={{
+                backgroundColor: secondaryColor,
+                color: primaryColor,
+                borderColor: primaryColor,
+              }}
+            >
               <CardContent className="pt-6">
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
+                  <div 
+                    className="flex items-center justify-between text-sm"
+                    style={{ color: primaryColor }}
+                  >
                     <span>Progress</span>
                     <span>{completedBallots} of {totalBallots} ballots completed</span>
                   </div>
@@ -190,14 +260,25 @@ export function BallotDisplay({ election, token }: BallotDisplayProps) {
               const selections = selectedOptions[ballot._id] || [];
 
               return (
-                <Card key={ballot._id}>
+                <Card 
+                  key={ballot._id}
+                  style={{
+                    backgroundColor: secondaryColor,
+                    color: primaryColor,
+                    borderColor: primaryColor,
+                  }}
+                >
                   <CardHeader>
-                    <CardTitle>{ballot.title}</CardTitle>
+                    <CardTitle style={{ color: primaryColor }}>
+                      {ballot.title}
+                    </CardTitle>
                     {ballot.description && (
-                      <CardDescription>{ballot.description}</CardDescription>
+                      <CardDescription style={{ color: primaryColor, opacity: 0.8 }}>
+                        {ballot.description}
+                      </CardDescription>
                     )}
                     {isMultiple && ballot.maxSelections && (
-                      <CardDescription>
+                      <CardDescription style={{ color: primaryColor, opacity: 0.8 }}>
                         Select up to {ballot.maxSelections} option{ballot.maxSelections > 1 ? 's' : ''}
                       </CardDescription>
                     )}
@@ -217,11 +298,15 @@ export function BallotDisplay({ election, token }: BallotDisplayProps) {
                               key={option._id}
                               className={`flex items-start gap-4 p-4 border rounded-lg cursor-pointer transition-colors ${
                                 isSelected
-                                  ? 'border-primary bg-primary/5'
+                                  ? ''
                                   : isDisabled
                                   ? 'opacity-50 cursor-not-allowed'
-                                  : 'hover:bg-accent'
+                                  : ''
                               }`}
+                              style={{
+                                borderColor: isSelected ? primaryColor : secondaryColor,
+                                backgroundColor: isSelected ? `${primaryColor}20` : 'transparent',
+                              }}
                               onClick={() => !isDisabled && handleOptionChange(ballot._id, option._id, true)}
                             >
                               <Checkbox
@@ -232,23 +317,27 @@ export function BallotDisplay({ election, token }: BallotDisplayProps) {
                               />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-3">
-                                  {option.photo && (
-                                    <Avatar className="h-12 w-12 shrink-0">
+                                  <Avatar className="h-12 w-12 shrink-0">
+                                    {option.photo && (
                                       <AvatarImage src={option.photo} alt={option.text} />
-                                      <AvatarFallback>
-                                        {option.text?.[0]?.toUpperCase() || 'C'}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                  )}
+                                    )}
+                                    <AvatarFallback>
+                                      {option.text?.[0]?.toUpperCase() || 'C'}
+                                    </AvatarFallback>
+                                  </Avatar>
                                   <div className="flex-1 min-w-0">
                                     <Label
                                       htmlFor={`option-${option._id}`}
                                       className="text-base cursor-pointer"
+                                      style={{ color: primaryColor }}
                                     >
                                       {option.text}
                                     </Label>
                                     {option.bio && (
-                                      <p className="text-sm text-muted-foreground mt-1">
+                                      <p 
+                                        className="text-sm mt-1"
+                                        style={{ color: primaryColor, opacity: 0.8 }}
+                                      >
                                         {option.bio}
                                       </p>
                                     )}
@@ -268,7 +357,11 @@ export function BallotDisplay({ election, token }: BallotDisplayProps) {
                           {ballot.options?.map((option) => (
                             <div
                               key={option._id}
-                              className="flex items-start gap-4 p-4 border rounded-lg hover:bg-accent transition-colors"
+                              className="flex items-start gap-4 p-4 border rounded-lg transition-colors"
+                              style={{
+                                borderColor: selections[0] === option._id ? primaryColor : secondaryColor,
+                                backgroundColor: selections[0] === option._id ? `${primaryColor}20` : 'transparent',
+                              }}
                             >
                               <RadioGroupItem
                                 value={option._id}
@@ -277,23 +370,27 @@ export function BallotDisplay({ election, token }: BallotDisplayProps) {
                               />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-3">
-                                  {option.photo && (
-                                    <Avatar className="h-12 w-12 shrink-0">
+                                  <Avatar className="h-12 w-12 shrink-0">
+                                    {option.photo && (
                                       <AvatarImage src={option.photo} alt={option.text} />
-                                      <AvatarFallback>
-                                        {option.text?.[0]?.toUpperCase() || 'C'}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                  )}
+                                    )}
+                                    <AvatarFallback>
+                                      {option.text?.[0]?.toUpperCase() || 'C'}
+                                    </AvatarFallback>
+                                  </Avatar>
                                   <div className="flex-1 min-w-0">
                                     <Label
                                       htmlFor={`option-${option._id}`}
                                       className="text-base cursor-pointer"
+                                      style={{ color: primaryColor }}
                                     >
                                       {option.text}
                                     </Label>
                                     {option.bio && (
-                                      <p className="text-sm text-muted-foreground mt-1">
+                                      <p 
+                                        className="text-sm mt-1"
+                                        style={{ color: primaryColor, opacity: 0.8 }}
+                                      >
                                         {option.bio}
                                       </p>
                                     )}
@@ -316,10 +413,21 @@ export function BallotDisplay({ election, token }: BallotDisplayProps) {
               variant="outline"
               onClick={() => router.push('/')}
               disabled={isSubmitting}
+              style={{
+                borderColor: secondaryColor,
+                color: secondaryColor,
+              }}
             >
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={isSubmitting}>
+            <Button 
+              onClick={handleSubmit} 
+              disabled={isSubmitting}
+              style={{
+                backgroundColor: primaryColor,
+                color: secondaryColor,
+              }}
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

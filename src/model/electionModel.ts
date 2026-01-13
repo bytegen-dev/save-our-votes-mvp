@@ -51,6 +51,11 @@ const electionSchema = new Schema<IElection>(
       default: 'draft',
     },
     ballots: { type: [ballotSchema], default: [] },
+    branding: {
+      logo: { type: String, trim: true },
+      primaryColor: { type: String, trim: true },
+      secondaryColor: { type: String, trim: true },
+    },
   },
   { timestamps: true }
 );

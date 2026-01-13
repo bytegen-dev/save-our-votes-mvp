@@ -22,6 +22,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { showToast } from '@/lib/toast';
 import type { Election } from '@/lib/types/election';
+import { ElectionBranding } from './election-branding';
 
 interface EditElectionDialogProps {
   election: Election | null;
@@ -37,11 +38,15 @@ export function EditElectionDialog({
   onSuccess,
 }: EditElectionDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [logo, setLogo] = useState<string>('');
+  const [primaryColor, setPrimaryColor] = useState<string>('#000000');
+  const [secondaryColor, setSecondaryColor] = useState<string>('#666666');
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<UpdateElectionInput>({
     resolver: zodResolver(updateElectionSchema),
@@ -57,7 +62,17 @@ export function EditElectionDialog({
         description: election.description || '',
         startAt: formatDateTimeLocal(startAt),
         endAt: formatDateTimeLocal(endAt),
+        branding: election.branding || {
+          logo: '',
+          primaryColor: '#000000',
+          secondaryColor: '#666666',
+        },
       });
+
+      // Set branding state
+      setLogo(election.branding?.logo || '');
+      setPrimaryColor(election.branding?.primaryColor || '#000000');
+      setSecondaryColor(election.branding?.secondaryColor || '#666666');
     }
   }, [election, open, reset]);
 
@@ -81,6 +96,16 @@ export function EditElectionDialog({
         description: data.description,
         startAt: new Date(data.startAt).toISOString(),
         endAt: new Date(data.endAt).toISOString(),
+        branding:
+          logo || primaryColor !== '#000000' || secondaryColor !== '#666666'
+            ? {
+                logo: logo || undefined,
+                primaryColor:
+                  primaryColor !== '#000000' ? primaryColor : undefined,
+                secondaryColor:
+                  secondaryColor !== '#666666' ? secondaryColor : undefined,
+              }
+            : undefined,
       };
 
       console.log('Updating election with data:', updateData);
@@ -102,7 +127,7 @@ export function EditElectionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Election</DialogTitle>
           <DialogDescription>
@@ -165,6 +190,26 @@ export function EditElectionDialog({
                 </p>
               )}
             </div>
+          </div>
+
+          <div className="pt-4 border-t">
+            <ElectionBranding
+              logo={logo}
+              primaryColor={primaryColor}
+              secondaryColor={secondaryColor}
+              onLogoChange={(url) => {
+                setLogo(url);
+                setValue('branding.logo', url);
+              }}
+              onPrimaryColorChange={(color) => {
+                setPrimaryColor(color);
+                setValue('branding.primaryColor', color);
+              }}
+              onSecondaryColorChange={(color) => {
+                setSecondaryColor(color);
+                setValue('branding.secondaryColor', color);
+              }}
+            />
           </div>
 
           <DialogFooter>

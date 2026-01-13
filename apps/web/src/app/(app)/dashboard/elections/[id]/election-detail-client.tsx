@@ -26,9 +26,11 @@ import {
   Info,
   Globe,
   Minus,
+  Share2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import type { Election } from '@/lib/types/election';
 import {
   ElectionStatusBadge,
@@ -167,116 +169,149 @@ export function ElectionDetailClient({
               <ElectionStatusBadge election={election} />
             </div>
           </div>
-          <div className="hidden lg:flex items-center gap-2">
-            {getElectionStatus(election) === 'draft' && (
-              <Button
-                onClick={async () => {
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={async () => {
+                const votingUrl = `${window.location.origin}/vote/${election.slug}`;
+                try {
+                  await navigator.clipboard.writeText(votingUrl);
+                  showToast.success('Voting link copied to clipboard!');
+                } catch (error) {
+                  // Fallback for older browsers
+                  const textArea = document.createElement('textarea');
+                  textArea.value = votingUrl;
+                  textArea.style.position = 'fixed';
+                  textArea.style.opacity = '0';
+                  document.body.appendChild(textArea);
+                  textArea.select();
                   try {
-                    await api.elections.publish(election._id);
-                    showToast.success('Election published successfully!');
-                    handleSuccess();
-                  } catch (error: any) {
-                    showToast.error(
-                      error?.data?.message ||
-                        error?.message ||
-                        'Failed to publish election'
-                    );
+                    document.execCommand('copy');
+                    showToast.success('Voting link copied to clipboard!');
+                  } catch (err) {
+                    showToast.error('Failed to copy link');
                   }
-                }}
-              >
-                <Globe className="mr-2 h-4 w-4" />
-                Publish
-              </Button>
-            )}
-            {getElectionStatus(election) !== 'draft' && (
+                  document.body.removeChild(textArea);
+                }
+              }}
+              className="lg:flex lg:items-center lg:gap-2"
+            >
+              <Share2 className="h-4 w-4 lg:mr-2" />
+              <span>Share Link</span>
+            </Button>
+            <div className="hidden lg:flex items-center gap-2">
+              {getElectionStatus(election) === 'draft' && (
+                <Button
+                  onClick={async () => {
+                    try {
+                      await api.elections.publish(election._id);
+                      showToast.success('Election published successfully!');
+                      handleSuccess();
+                    } catch (error: any) {
+                      showToast.error(
+                        error?.data?.message ||
+                          error?.message ||
+                          'Failed to publish election'
+                      );
+                    }
+                  }}
+                >
+                  <Globe className="mr-2 h-4 w-4" />
+                  Publish
+                </Button>
+              )}
+              {getElectionStatus(election) !== 'draft' && (
+                <Button
+                  variant="outline"
+                  onClick={() => setConvertToDraftDialogOpen(true)}
+                >
+                  <span className="relative mr-2 inline-block">
+                    <Globe className="h-4 w-4" />
+                    <Minus
+                      className="absolute top-1/2 left-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rotate-45"
+                      strokeWidth={3}
+                    />
+                  </span>
+                  Convert to Draft
+                </Button>
+              )}
               <Button
                 variant="outline"
-                onClick={() => setConvertToDraftDialogOpen(true)}
+                onClick={() => setEditDialogOpen(true)}
+                className="lg:flex lg:items-center lg:gap-2"
               >
-                <span className="relative mr-2 inline-block">
-                  <Globe className="h-4 w-4" />
-                  <Minus
-                    className="absolute top-1/2 left-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rotate-45"
-                    strokeWidth={3}
-                  />
-                </span>
-                Convert to Draft
+                <Edit className="h-4 w-4 lg:mr-2" />
+                <span className="hidden lg:inline">Edit</span>
               </Button>
-            )}
-            <Button
-              variant="outline"
-              onClick={() => setEditDialogOpen(true)}
-              className="lg:flex lg:items-center lg:gap-2"
-            >
-              <Edit className="h-4 w-4 lg:mr-2" />
-              <span className="hidden lg:inline">Edit</span>
-            </Button>
-            <Button
-              variant="outline"
-              asChild
-              className="lg:flex lg:items-center lg:gap-2"
-            >
-              <Link href={`/dashboard/elections/${election._id}/duplicate`}>
-                <Copy className="h-4 w-4 lg:mr-2" />
-                <span className="hidden lg:inline">Duplicate</span>
-              </Link>
-            </Button>
-          </div>
-          {/* Mobile: Dropdown menu */}
-          <div className="lg:hidden">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {getElectionStatus(election) === 'draft' && (
-                  <DropdownMenuItem
-                    onClick={async () => {
-                      try {
-                        await api.elections.publish(election._id);
-                        showToast.success('Election published successfully!');
-                        handleSuccess();
-                      } catch (error: any) {
-                        showToast.error(
-                          error?.data?.message ||
-                            error?.message ||
-                            'Failed to publish election'
-                        );
-                      }
-                    }}
-                  >
-                    <Globe className="mr-2 h-4 w-4" />
-                    Publish
+              <Button
+                variant="outline"
+                asChild
+                className="lg:flex lg:items-center lg:gap-2"
+              >
+                <Link href={`/dashboard/elections/${election._id}/duplicate`}>
+                  <Copy className="h-4 w-4 lg:mr-2" />
+                  <span className="hidden lg:inline">Duplicate</span>
+                </Link>
+              </Button>
+            </div>
+            {/* Mobile: Dropdown menu */}
+            <div className="lg:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {getElectionStatus(election) === 'draft' && (
+                    <DropdownMenuItem
+                      onClick={async () => {
+                        try {
+                          await api.elections.publish(election._id);
+                          showToast.success('Election published successfully!');
+                          handleSuccess();
+                        } catch (error: any) {
+                          showToast.error(
+                            error?.data?.message ||
+                              error?.message ||
+                              'Failed to publish election'
+                          );
+                        }
+                      }}
+                    >
+                      <Globe className="mr-2 h-4 w-4" />
+                      Publish
+                    </DropdownMenuItem>
+                  )}
+                  {getElectionStatus(election) !== 'draft' && (
+                    <DropdownMenuItem
+                      onClick={() => setConvertToDraftDialogOpen(true)}
+                    >
+                      <span className="relative mr-2 inline-block">
+                        <Globe className="h-4 w-4" />
+                        <Minus
+                          className="absolute top-1/2 left-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rotate-45"
+                          strokeWidth={3}
+                        />
+                      </span>
+                      Convert to Draft
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={() => setEditDialogOpen(true)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit
                   </DropdownMenuItem>
-                )}
-                {getElectionStatus(election) !== 'draft' && (
-                  <DropdownMenuItem
-                    onClick={() => setConvertToDraftDialogOpen(true)}
-                  >
-                    <span className="relative mr-2 inline-block">
-                      <Globe className="h-4 w-4" />
-                      <Minus
-                        className="absolute top-1/2 left-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rotate-45"
-                        strokeWidth={3}
-                      />
-                    </span>
-                    Convert to Draft
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href={`/dashboard/elections/${election._id}/duplicate`}
+                    >
+                      <Copy className="mr-2 h-4 w-4" />
+                      Duplicate
+                    </Link>
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onClick={() => setEditDialogOpen(true)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href={`/dashboard/elections/${election._id}/duplicate`}>
-                    <Copy className="mr-2 h-4 w-4" />
-                    Duplicate
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
 
@@ -313,6 +348,61 @@ export function ElectionDetailClient({
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              {election.branding &&
+                (election.branding.logo ||
+                  election.branding.primaryColor ||
+                  election.branding.secondaryColor) && (
+                  <div>
+                    <h3 className="text-sm text-muted-foreground mb-2">
+                      Branding
+                    </h3>
+                    <div className="flex items-center gap-4">
+                      {election.branding.logo && (
+                        <div className="relative w-20 h-20 border rounded-lg overflow-hidden bg-muted">
+                          <Image
+                            src={election.branding.logo}
+                            alt="Election logo"
+                            fill
+                            className="object-contain"
+                          />
+                        </div>
+                      )}
+                      {(election.branding.primaryColor ||
+                        election.branding.secondaryColor) && (
+                        <div className="flex items-center gap-2">
+                          {election.branding.primaryColor && (
+                            <div className="flex items-center gap-1">
+                              <div
+                                className="w-6 h-6 rounded border"
+                                style={{
+                                  backgroundColor:
+                                    election.branding.primaryColor,
+                                }}
+                              />
+                              <span className="text-xs text-muted-foreground">
+                                Primary
+                              </span>
+                            </div>
+                          )}
+                          {election.branding.secondaryColor && (
+                            <div className="flex items-center gap-1">
+                              <div
+                                className="w-6 h-6 rounded border"
+                                style={{
+                                  backgroundColor:
+                                    election.branding.secondaryColor,
+                                }}
+                              />
+                              <span className="text-xs text-muted-foreground">
+                                Secondary
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               {election.description && (
                 <div>
                   <h3 className="text-sm text-muted-foreground mb-1">

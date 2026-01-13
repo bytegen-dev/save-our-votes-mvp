@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,19 +68,61 @@ export function VotingPageClient({ election }: VotingPageClientProps) {
     return <BallotDisplay election={election} token={token.trim()} />;
   }
 
+  const primaryColor = election.branding?.primaryColor || '#000000';
+  const secondaryColor = election.branding?.secondaryColor || '#666666';
+  const logo = election.branding?.logo;
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <Card className="w-full max-w-md">
+    <div 
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{
+        backgroundColor: primaryColor,
+        color: secondaryColor,
+      }}
+    >
+      <Card 
+        className="w-full max-w-md"
+        style={{
+          backgroundColor: secondaryColor,
+          color: primaryColor,
+          borderColor: primaryColor,
+        }}
+      >
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">{election.title}</CardTitle>
+          {logo && (
+            <div className="relative w-20 h-20 mx-auto mb-4">
+              <Image
+                src={logo}
+                alt="Election logo"
+                fill
+                className="object-contain"
+              />
+            </div>
+          )}
+          <CardTitle 
+            className="text-2xl"
+            style={{ color: primaryColor }}
+          >
+            {election.title}
+          </CardTitle>
           {election.description && (
-            <CardDescription className="mt-2">{election.description}</CardDescription>
+            <CardDescription 
+              className="mt-2"
+              style={{ color: primaryColor, opacity: 0.8 }}
+            >
+              {election.description}
+            </CardDescription>
           )}
         </CardHeader>
         <CardContent>
           <form onSubmit={handleTokenSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="token">Voter Token</Label>
+              <Label 
+                htmlFor="token"
+                style={{ color: primaryColor }}
+              >
+                Voter Token
+              </Label>
               <Input
                 id="token"
                 type="text"
@@ -88,8 +131,15 @@ export function VotingPageClient({ election }: VotingPageClientProps) {
                 onChange={(e) => setToken(e.target.value)}
                 disabled={isValidating}
                 autoFocus
+                style={{
+                  backgroundColor: 'white',
+                  color: '#000000',
+                }}
               />
-              <p className="text-xs text-muted-foreground">
+              <p 
+                className="text-xs"
+                style={{ color: primaryColor, opacity: 0.7 }}
+              >
                 Enter the token provided to you to access this election.
               </p>
             </div>
@@ -101,7 +151,15 @@ export function VotingPageClient({ election }: VotingPageClientProps) {
               </Alert>
             )}
 
-            <Button type="submit" className="w-full" disabled={isValidating}>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isValidating}
+              style={{
+                backgroundColor: primaryColor,
+                color: secondaryColor,
+              }}
+            >
               {isValidating ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

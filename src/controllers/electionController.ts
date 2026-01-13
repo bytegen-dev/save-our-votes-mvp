@@ -23,7 +23,7 @@ export const createElection = async (
   next: NextFunction
 ) => {
   try {
-    const { title, description, startAt, endAt, organizerId } = req.body;
+    const { title, description, startAt, endAt, organizerId, branding } = req.body;
     console.log('createElection req.body =', req.body);
     if (!title || !startAt || !endAt) {
       return next(new AppError('title, startAt and endAt are required', 400));
@@ -50,14 +50,25 @@ export const createElection = async (
       );
     }
 
-    const election = await Election.create({
+    const electionData: any = {
       title: title.trim(),
       description: description ? description.trim() : '',
       organizer,
       startAt: start,
       endAt: end,
       status: 'draft', // Default to draft - admin must publish
-    });
+    };
+
+    // Add branding if provided
+    if (branding) {
+      electionData.branding = {
+        logo: branding.logo || undefined,
+        primaryColor: branding.primaryColor || undefined,
+        secondaryColor: branding.secondaryColor || undefined,
+      };
+    }
+
+    const election = await Election.create(electionData);
 
     res.status(201).json({
       status: 'success',
